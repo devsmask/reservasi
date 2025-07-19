@@ -31,7 +31,6 @@
     </thead>
     <tbody></tbody>
   </table>
-
   <div id="calendar"></div>
 </div>
 
@@ -44,18 +43,12 @@
     <div class="modal-body">
       <form id="bookingForm">
         <input type="hidden" id="ID">
-        <div class="row mb-2">
-          <div class="col"><label>Tanggal</label><input type="date" id="Date" class="form-control" required></div>
-          <div class="col"><label>Pickup</label><input type="datetime-local" id="Pickup" class="form-control" required></div>
-        </div>
-        <div class="row mb-2">
-          <div class="col"><label>Agent</label><input type="text" id="Agent" class="form-control" required></div>
-          <div class="col"><label>Boat</label><input type="text" id="Boat" class="form-control" required></div>
-        </div>
-        <div class="row mb-2">
-          <div class="col"><label>Packages</label><input type="text" id="Packages" class="form-control"></div>
-          <div class="col"><label>TotalPax</label><input type="number" id="TotalPax" class="form-control"></div>
-        </div>
+        <div class="mb-2"><label>Tanggal</label><input type="date" id="Date" class="form-control" required></div>
+        <div class="mb-2"><label>Pickup</label><input type="time" id="Pickup" class="form-control" required></div>
+        <div class="mb-2"><label>Agent</label><input type="text" id="Agent" class="form-control" required></div>
+        <div class="mb-2"><label>Boat</label><input type="text" id="Boat" class="form-control" required></div>
+        <div class="mb-2"><label>Packages</label><input type="text" id="Packages" class="form-control"></div>
+        <div class="mb-2"><label>Total Pax</label><input type="number" id="TotalPax" class="form-control"></div>
         <div class="mb-2"><label>Guest Name</label><textarea id="GuestName" class="form-control"></textarea></div>
         <div class="mb-2"><label>Note</label><textarea id="Note" class="form-control"></textarea></div>
         <div class="mb-2"><label>Status</label>
@@ -85,10 +78,8 @@ async function checkPasscode() {
   }
 }
 
-let table;
-
 function loadData() {
-  fetch(`${scriptURL}?action=read`)
+  fetch(`${scriptURL}?action=get`)
     .then(res => res.json())
     .then(data => {
       const tbody = document.querySelector('#bookingTable tbody');
@@ -99,11 +90,10 @@ function loadData() {
           <td>${i+1}</td>
           <td>${item.ID}</td><td>${item.Date}</td><td>${item.Agent}</td>
           <td>${item.Boat}</td><td>${item.Packages}</td><td>${item.TotalPax}</td>
-          <td>${item.GuestName}</td><td>${item.Pickup}</td><td>${item.Note}</td>
+          <td>${item.GuestName}</td><td>${item.PickUp}</td><td>${item.Note}</td>
           <td>${item.Status}</td>
           <td>
             <button class="btn btn-sm btn-warning" onclick='editBooking(${JSON.stringify(item)})'>Edit</button>
-            <button class="btn btn-sm btn-danger" onclick='deleteBooking("${item.ID}")'>Delete</button>
           </td>`;
         tbody.appendChild(tr);
       });
@@ -118,9 +108,8 @@ function loadData() {
 document.getElementById('bookingForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(e.target).entries());
-  const action = data.ID ? 'edit' : 'add';
-
-  const res = await fetch(`${scriptURL}?action=${action}`, {
+  data.action = data.ID ? 'update' : 'add';
+  const res = await fetch(scriptURL, {
     method: 'POST',
     body: JSON.stringify(data)
   });
@@ -137,17 +126,6 @@ function editBooking(item) {
     if (el) el.value = item[key];
   }
   new bootstrap.Modal(document.getElementById('formModal')).show();
-}
-
-function deleteBooking(id) {
-  if (confirm('Yakin hapus?')) {
-    fetch(`${scriptURL}?action=delete`, {
-      method: 'POST',
-      body: JSON.stringify({ ID: id })
-    }).then(res => res.json()).then(json => {
-      if (json.success) loadData();
-    });
-  }
 }
 
 function resetForm() {
@@ -170,7 +148,7 @@ function renderCalendar(data) {
       const detail = `
 🚤 *Yacht Booking* 🚤
 📅 Tanggal: ${d.Date}
-⏰ Pickup: ${d.Pickup}
+⏰ Pickup: ${d.PickUp}
 👤 Agent: ${d.Agent}
 🛥️ Boat: ${d.Boat}
 📦 Packages: ${d.Packages}
