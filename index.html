@@ -1,76 +1,196 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Reservasi Yacht - Login</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yacht Booking</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
   <style>
-    body {
-      background-color: #f8f9fa;
-    }
-    .login-box {
-      max-width: 400px;
-      margin: 100px auto;
-      padding: 2rem;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
+    body { font-size: 0.95rem; padding: 1rem; }
+    .fc-toolbar-title { font-size: 1.2rem; }
+    #calendar { max-width: 100%; margin: 20px auto; }
   </style>
 </head>
 <body>
+<div id="loginSection" class="text-center">
+  <h4>Masukkan Passcode</h4>
+  <input type="password" id="passcodeInput" class="form-control w-25 d-inline" placeholder="Passcode">
+  <button onclick="checkPasscode()" class="btn btn-primary">Masuk</button>
+</div>
 
-  <div class="login-box">
-    <h3 class="text-center mb-4">Login Reservasi</h3>
-    <div class="mb-3">
-      <label for="username" class="form-label">Username</label>
-      <input type="text" class="form-control" id="username" required />
+<div id="mainApp" style="display:none;">
+  <h3>Data Booking</h3>
+  <button class="btn btn-success mb-2" data-bs-toggle="modal" data-bs-target="#formModal" onclick="resetForm()">Tambah Booking</button>
+  <table id="bookingTable" class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>#</th><th>ID</th><th>Date</th><th>Agent</th><th>Boat</th><th>Packages</th><th>TotalPax</th><th>GuestName</th><th>Pickup</th><th>Note</th><th>Status</th><th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="calendar"></div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="formModal" tabindex="-1">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Form Booking</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
-    <div class="mb-3">
-      <label for="password" class="form-label">Password</label>
-      <input type="password" class="form-control" id="password" required />
+    <div class="modal-body">
+      <form id="bookingForm">
+        <input type="hidden" id="ID">
+        <div class="row mb-2">
+          <div class="col"><label>Tanggal</label><input type="date" id="Date" class="form-control" required></div>
+          <div class="col"><label>Pickup</label><input type="datetime-local" id="Pickup" class="form-control" required></div>
+        </div>
+        <div class="row mb-2">
+          <div class="col"><label>Agent</label><input type="text" id="Agent" class="form-control" required></div>
+          <div class="col"><label>Boat</label><input type="text" id="Boat" class="form-control" required></div>
+        </div>
+        <div class="row mb-2">
+          <div class="col"><label>Packages</label><input type="text" id="Packages" class="form-control"></div>
+          <div class="col"><label>TotalPax</label><input type="number" id="TotalPax" class="form-control"></div>
+        </div>
+        <div class="mb-2"><label>Guest Name</label><textarea id="GuestName" class="form-control"></textarea></div>
+        <div class="mb-2"><label>Note</label><textarea id="Note" class="form-control"></textarea></div>
+        <div class="mb-2"><label>Status</label>
+          <select id="Status" class="form-control">
+            <option>Hold</option><option>Confirm</option><option>Cancel</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Simpan</button>
+      </form>
     </div>
-    <button class="btn btn-primary w-100" onclick="login()">Login</button>
-  </div>
+  </div></div>
+</div>
 
-  <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycb.../exec'; // GANTI dengan URL script Anda
+<script>
+const scriptURL = 'https://script.google.com/macros/s/AKfycbyGqpZJ-9UPpleL9q8ysMI6t4NRxxartYhCW5aczKjBuX3FjZpdk35oCyez11FfJPInNw/exec';
 
-    function login() {
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value.trim();
+async function checkPasscode() {
+  const pass = document.getElementById('passcodeInput').value;
+  const res = await fetch(`${scriptURL}?action=check&passcode=${pass}`);
+  const json = await res.json();
+  if (json.success) {
+    document.getElementById('loginSection').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    loadData();
+  } else {
+    alert('Passcode salah!');
+  }
+}
 
-      if (!username || !password) {
-        alert("Isi username dan password");
-        return;
+let table;
+
+function loadData() {
+  fetch(`${scriptURL}?action=read`)
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.querySelector('#bookingTable tbody');
+      tbody.innerHTML = '';
+      data.forEach((item, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${item.ID}</td><td>${item.Date}</td><td>${item.Agent}</td>
+          <td>${item.Boat}</td><td>${item.Packages}</td><td>${item.TotalPax}</td>
+          <td>${item.GuestName}</td><td>${item.Pickup}</td><td>${item.Note}</td>
+          <td>${item.Status}</td>
+          <td>
+            <button class="btn btn-sm btn-warning" onclick='editBooking(${JSON.stringify(item)})'>Edit</button>
+            <button class="btn btn-sm btn-danger" onclick='deleteBooking("${item.ID}")'>Delete</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+      if ($.fn.DataTable.isDataTable('#bookingTable')) {
+        $('#bookingTable').DataTable().clear().destroy();
       }
+      $('#bookingTable').DataTable();
+      renderCalendar(data);
+    });
+}
 
-      const url = `${SCRIPT_URL}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target).entries());
+  const action = data.ID ? 'edit' : 'add';
 
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('username', username);
-            alert('Login berhasil');
-            window.location.href = 'home.html'; // GANTI ke halaman utama Anda
-          } else {
-            alert('Login gagal. Periksa username/password');
-          }
-        })
-        .catch(error => {
-          console.error('Login error:', error);
-          alert('Gagal login: koneksi error');
-        });
+  const res = await fetch(`${scriptURL}?action=${action}`, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+  const result = await res.json();
+  if (result.success) {
+    bootstrap.Modal.getInstance(document.getElementById('formModal')).hide();
+    loadData();
+  }
+});
+
+function editBooking(item) {
+  for (let key in item) {
+    const el = document.getElementById(key);
+    if (el) el.value = item[key];
+  }
+  new bootstrap.Modal(document.getElementById('formModal')).show();
+}
+
+function deleteBooking(id) {
+  if (confirm('Yakin hapus?')) {
+    fetch(`${scriptURL}?action=delete`, {
+      method: 'POST',
+      body: JSON.stringify({ ID: id })
+    }).then(res => res.json()).then(json => {
+      if (json.success) loadData();
+    });
+  }
+}
+
+function resetForm() {
+  document.getElementById('bookingForm').reset();
+  document.getElementById('ID').value = '';
+}
+
+function renderCalendar(data) {
+  const calendarEl = document.getElementById('calendar');
+  calendarEl.innerHTML = '';
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    events: data.map(item => ({
+      title: `${item.Boat} (${item.GuestName})`,
+      start: item.Date,
+      extendedProps: item,
+    })),
+    eventClick: function(info) {
+      const d = info.event.extendedProps;
+      const detail = `
+🚤 *Yacht Booking* 🚤
+📅 Tanggal: ${d.Date}
+⏰ Pickup: ${d.Pickup}
+👤 Agent: ${d.Agent}
+🛥️ Boat: ${d.Boat}
+📦 Packages: ${d.Packages}
+👥 Pax: ${d.TotalPax}
+👨‍👩‍👧 Guest: ${d.GuestName}
+📝 Note: ${d.Note}
+📌 Status: ${d.Status}
+`;
+      const url = `https://wa.me/?text=${encodeURIComponent(detail)}`;
+      window.open(url, '_blank');
     }
+  });
+  calendar.render();
+}
+</script>
 
-    // Auto redirect jika sudah login
-    if (localStorage.getItem('isLoggedIn') === 'true') {
-      window.location.href = 'home.html';
-    }
-  </script>
-
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 </body>
 </html>
