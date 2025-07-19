@@ -1,214 +1,209 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yacht Booking System</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yacht Booking</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <link href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet">
   <style>
-    body { padding: 20px; font-size: 14px; }
+    body { padding: 1rem; }
+    #calendar { max-width: 100%; margin: 1rem auto; }
+    .fc-daygrid-day-number { cursor: pointer; }
     .hidden { display: none; }
-    .btn-edit { background: orange; color: white; }
-    .btn-delete { background: red; color: white; }
-    .btn-add { background: green; color: white; margin-bottom: 10px; }
-    textarea { resize: vertical; }
   </style>
 </head>
 <body>
-  <div id="login-section" class="container">
-    <h2 class="mb-3">Login</h2>
-    <input type="text" id="username" class="form-control mb-2" placeholder="Username">
-    <input type="password" id="password" class="form-control mb-2" placeholder="Password">
-    <button class="btn btn-primary" onclick="login()">Login</button>
+<div class="container">
+  <div id="loginSection">
+    <h3 class="mb-3">Login</h3>
+    <input type="text" class="form-control mb-2" id="username" placeholder="Username">
+    <input type="password" class="form-control mb-2" id="password" placeholder="Password">
+    <button class="btn btn-primary w-100" onclick="login()">Login</button>
   </div>
 
-  <div id="main-app" class="hidden container">
-    <h2 class="mb-3">Booking List</h2>
-    <button class="btn btn-add" onclick="openForm()">+ Add Booking</button>
-    <table id="booking-table" class="display table table-bordered table-striped">
-      <thead>
-        <tr>
-          <th>No</th>
-          <th>ID</th>
-          <th>Date</th>
-          <th>Agent</th>
-          <th>Boat</th>
-          <th>Packages</th>
-          <th>Total Pax</th>
-          <th>Guest Names</th>
-          <th>PickUp</th>
-          <th>Note</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="booking-table-body"></tbody>
-    </table>
+  <div id="mainSection" class="hidden">
+    <h2 class="my-3">Yacht Booking</h2>
+    <button class="btn btn-success mb-3" onclick="openModal()">Add Booking</button>
+    <table id="bookingTable" class="display w-100"></table>
+    <div id="calendar"></div>
+    <div id="bookingDetails" class="mt-4"></div>
   </div>
+</div>
 
-  <div class="modal" id="formModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
+<!-- Modal -->
+<div class="modal fade" id="bookingModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="bookingForm">
         <div class="modal-header">
-          <h5 class="modal-title" id="formTitle">Add Booking</h5>
-          <button type="button" class="btn-close" onclick="closeForm()"></button>
+          <h5 class="modal-title">Booking Form</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <input type="hidden" id="bookingId">
-          <label>Date</label>
-          <input type="date" id="date" class="form-control">
-          <label>Agent</label>
-          <input type="text" id="agent" class="form-control">
-          <label>Boat</label>
-          <select id="boat" class="form-control">
-            <option>MORGAN</option><option>SEAVIEW</option><option>BM1</option>
-            <option>BM2</option><option>BM3</option><option>AM1</option>
-            <option>AM2</option><option>BLUE CATT</option>
+          <label class="form-label">Date</label>
+          <input type="date" class="form-control" id="date" required>
+          <label class="form-label mt-2">Agent</label>
+          <input type="text" class="form-control" id="agent" required>
+          <label class="form-label mt-2">Boat</label>
+          <select class="form-select" id="boat">
+            <option>Morgan</option>
+            <option>Seaview</option>
+            <option>BM 1</option>
+            <option>BM 2</option>
+            <option>BM 3</option>
+            <option>AM 1</option>
+            <option>AM 2</option>
+            <option>CATAMARAN</option>
           </select>
-          <label>Packages</label>
-          <select id="packages" class="form-control">
-            <option>Full day trip Nusa Penida/ Lembongan Island</option>
+          <label class="form-label mt-2">Packages</label>
+          <select class="form-select" id="packages">
+            <option>Full day trip Penida/ Lembongan Island</option>
             <option>Full day trip Gili/ Lombok Island</option>
             <option>Half day trip Nusa Dua Area</option>
           </select>
-          <label>Total Pax</label>
-          <input type="number" id="totalPax" class="form-control">
-          <label>Guest Names</label>
-          <textarea id="guestNames" class="form-control"></textarea>
-          <label>PickUp</label>
-          <input type="text" id="pickup" class="form-control">
-          <label>Note</label>
-          <textarea id="note" class="form-control"></textarea>
-          <label>Status</label>
-          <select id="status" class="form-control">
+          <label class="form-label mt-2">Total Pax</label>
+          <input type="text" class="form-control" id="totalPax">
+          <label class="form-label mt-2">Guest Name</label>
+          <textarea class="form-control" id="guestName"></textarea>
+          <label class="form-label mt-2">Pickup Time</label>
+          <input type="time" class="form-control" id="pickup" value="08:00">
+          <label class="form-label mt-2">Note</label>
+          <textarea class="form-control" id="note"></textarea>
+          <label class="form-label mt-2">Status</label>
+          <select class="form-select" id="status">
             <option>Hold</option>
             <option>Confirm</option>
             <option>Cancel</option>
           </select>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-success" onclick="saveBooking()">Save</button>
-          <button class="btn btn-secondary" onclick="closeForm()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
         </div>
-      </div>
+      </form>
     </div>
   </div>
+</div>
 
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-  <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbwBi4_S3pSqn3LId0Xqm4HwyoAPEwNL5g6H_mQCjYRUI_gK2FEc1SlRiaNhH2_qAupkMw/exec'; // Ganti dengan URL Web App kamu
-    let bookings = [];
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbyGqpZJ-9UPpleL9q8ysMI6t4NRxxartYhCW5aczKjBuX3FjZpdk35oCyez11FfJPInNw/exec';
+let bookingData = [];
 
-    function login() {
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
-      fetch(scriptURL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'login', username, password }),
-        headers: { 'Content-Type': 'application/json' }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'success') {
-          document.getElementById("login-section").classList.add('hidden');
-          document.getElementById("main-app").classList.remove('hidden');
-          fetchBookings();
-        } else {
-          alert("Login salah!");
-        }
-      });
-    }
+function login() {
+  axios.post(`${API_URL}?action=login`, {
+    username: document.getElementById('username').value,
+    password: document.getElementById('password').value
+  }).then(res => {
+    if (res.data.success) {
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('mainSection').classList.remove('hidden');
+      loadData();
+    } else alert('Login failed');
+  });
+}
 
-    function fetchBookings() {
-      fetch(scriptURL + '?action=get')
-        .then(res => res.json())
-        .then(data => {
-          bookings = data;
-          renderTable();
-        });
-    }
+function loadData() {
+  axios.get(API_URL).then(res => {
+    bookingData = res.data;
+    const table = $('#bookingTable').DataTable({
+      data: bookingData,
+      destroy: true,
+      columns: [
+        { title: '#', data: null, render: (d,t,r,m) => m.row + 1 },
+        { title: 'ID', data: 'ID' },
+        { title: 'Date', data: 'Date' },
+        { title: 'Boat', data: 'Boat' },
+        { title: 'Agent', data: 'Agent' },
+        { title: 'Packages', data: 'Packages' },
+        { title: 'Guest', data: 'GuestName' },
+        { title: 'Status', data: 'Status' },
+        { title: 'Action', data: null, render: d => `<button class='btn btn-sm btn-warning' onclick='editBooking("${d.ID}")'>Edit</button>` }
+      ]
+    });
+    renderCalendar();
+  });
+}
 
-    function renderTable() {
-      const tbody = document.getElementById("booking-table-body");
-      tbody.innerHTML = '';
-      bookings.forEach((b, i) => {
-        const row = `<tr>
-          <td>${i+1}</td>
-          <td>${b.ID}</td><td>${b.Date}</td><td>${b.Agent}</td><td>${b.Boat}</td>
-          <td>${b.Packages}</td><td>${b.TotalPax}</td><td>${b.GuestName}</td>
-          <td>${b.PickUp}</td><td>${b.Note}</td><td>${b.Status}</td>
-          <td>
-            <button class="btn btn-sm btn-edit" onclick='editBooking(${JSON.stringify(b)})'>Edit</button>
-            <button class="btn btn-sm btn-delete" onclick='deleteBooking("${b.ID}")'>Delete</button>
-          </td></tr>`;
-        tbody.innerHTML += row;
-      });
-      $('#booking-table').DataTable();
-    }
+function openModal() {
+  document.getElementById('bookingForm').reset();
+  document.getElementById('bookingId').value = '';
+  new bootstrap.Modal(document.getElementById('bookingModal')).show();
+}
 
-    function openForm() {
-      const modal = new bootstrap.Modal(document.getElementById('formModal'));
-      modal.show();
-    }
+function editBooking(id) {
+  const data = bookingData.find(d => d.ID === id);
+  if (!data) return;
+  document.getElementById('bookingId').value = data.ID;
+  document.getElementById('date').value = data.Date;
+  document.getElementById('agent').value = data.Agent;
+  document.getElementById('boat').value = data.Boat;
+  document.getElementById('packages').value = data.Packages;
+  document.getElementById('totalPax').value = data.TotalPax;
+  document.getElementById('guestName').value = data.GuestName;
+  document.getElementById('pickup').value = data.Pickup;
+  document.getElementById('note').value = data.Note;
+  document.getElementById('status').value = data.Status;
+  new bootstrap.Modal(document.getElementById('bookingModal')).show();
+}
 
-    function closeForm() {
-      const modal = bootstrap.Modal.getInstance(document.getElementById('formModal'));
-      modal.hide();
-      document.getElementById("formTitle").textContent = "Add Booking";
-      document.getElementById("bookingId").value = '';
-      document.querySelectorAll('#formModal input, #formModal textarea, #formModal select').forEach(i => i.value = '');
-    }
+document.getElementById('bookingForm').onsubmit = e => {
+  e.preventDefault();
+  const payload = {
+    ID: document.getElementById('bookingId').value,
+    Date: document.getElementById('date').value,
+    Agent: document.getElementById('agent').value,
+    Boat: document.getElementById('boat').value,
+    Packages: document.getElementById('packages').value,
+    TotalPax: document.getElementById('totalPax').value,
+    GuestName: document.getElementById('guestName').value,
+    Pickup: document.getElementById('pickup').value,
+    Note: document.getElementById('note').value,
+    Status: document.getElementById('status').value
+  };
+  const action = payload.ID ? 'edit' : 'add';
+  axios.post(`${API_URL}?action=${action}`, payload).then(res => {
+    if (res.data.success) {
+      bootstrap.Modal.getInstance(document.getElementById('bookingModal')).hide();
+      loadData();
+    } else alert('Failed to save');
+  });
+};
 
-    function saveBooking() {
-      const payload = {
-        action: 'save',
-        ID: document.getElementById("bookingId").value,
-        Date: document.getElementById("date").value,
-        Agent: document.getElementById("agent").value,
-        Boat: document.getElementById("boat").value,
-        Packages: document.getElementById("packages").value,
-        TotalPax: document.getElementById("totalPax").value,
-        GuestName: document.getElementById("guestNames").value,
-        PickUp: document.getElementById("pickup").value,
-        Note: document.getElementById("note").value,
-        Status: document.getElementById("status").value
-      };
-      fetch(scriptURL, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        headers: { 'Content-Type': 'application/json' }
-      }).then(() => {
-        fetchBookings();
-        closeForm();
-      });
-    }
-
-    function editBooking(b) {
-      openForm();
-      document.getElementById("formTitle").textContent = "Edit Booking";
-      document.getElementById("bookingId").value = b.ID;
-      document.getElementById("date").value = b.Date;
-      document.getElementById("agent").value = b.Agent;
-      document.getElementById("boat").value = b.Boat;
-      document.getElementById("packages").value = b.Packages;
-      document.getElementById("totalPax").value = b.TotalPax;
-      document.getElementById("guestNames").value = b.GuestName;
-      document.getElementById("pickup").value = b.PickUp;
-      document.getElementById("note").value = b.Note;
-      document.getElementById("status").value = b.Status;
-    }
-
-    function deleteBooking(id) {
-      if (!confirm("Yakin ingin menghapus data ini?")) return;
-      fetch(scriptURL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'delete', ID: id }),
-        headers: { 'Content-Type': 'application/json' }
-      }).then(() => fetchBookings());
-    }
-  </script>
+function renderCalendar() {
+  const calendarEl = document.getElementById('calendar');
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    dateClick: function(info) {
+      const selected = bookingData.filter(b => b.Date === info.dateStr);
+      if (selected.length) {
+        let text = selected.map(b => `${b.Boat} - ${b.GuestName} (${b.Status})`).join('\n');
+        document.getElementById('bookingDetails').innerHTML = `
+          <h5>Booking on ${info.dateStr}</h5>
+          <textarea class='form-control' rows='5'>${text}</textarea>
+          <a class='btn btn-success mt-2' target='_blank' href='https://wa.me/?text=${encodeURIComponent(text)}'>Forward to WhatsApp</a>
+        `;
+      } else {
+        document.getElementById('bookingDetails').innerHTML = '<p>No booking on selected date.</p>';
+      }
+    },
+    events: Object.values(
+      bookingData.reduce((acc, b) => {
+        if (!acc[b.Date]) acc[b.Date] = { title: b.Boat, start: b.Date };
+        else acc[b.Date].title += `, ${b.Boat}`;
+        return acc;
+      }, {})
+    )
+  });
+  calendar.render();
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
